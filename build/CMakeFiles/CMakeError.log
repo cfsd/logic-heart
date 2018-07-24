@@ -1,0 +1,15 @@
+Determining if the include file pthread.h exists failed with the following output:
+Change Dir: /Users/oscar/github/cluon-cfsd/logic-heart/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_cb51a/fast"
+/Library/Developer/CommandLineTools/usr/bin/make -f CMakeFiles/cmTC_cb51a.dir/build.make CMakeFiles/cmTC_cb51a.dir/build
+Building C object CMakeFiles/cmTC_cb51a.dir/CheckIncludeFile.c.o
+/Library/Developer/CommandLineTools/usr/bin/cc    -o CMakeFiles/cmTC_cb51a.dir/CheckIncludeFile.c.o   -c /Users/oscar/github/cluon-cfsd/logic-heart/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_cb51a
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_cb51a.dir/link.txt --verbose=1
+/Library/Developer/CommandLineTools/usr/bin/cc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -static-libgcc -static-libstdc++  CMakeFiles/cmTC_cb51a.dir/CheckIncludeFile.c.o  -o cmTC_cb51a 
+clang: error: unsupported option '-static-libgcc'
+make[1]: *** [cmTC_cb51a] Error 1
+make: *** [cmTC_cb51a/fast] Error 2
+
+
