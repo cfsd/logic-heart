@@ -25,17 +25,19 @@
 
 class Heart {
  public:
-  Heart(int32_t);
+  Heart();
   ~Heart();
   void nextContainer(cluon::data::Envelope &);
-  void body();
+  bool body();
+  bool setMission(int32_t);
 
  private:
-  void setUp(int32_t);
+  void setUp();
   void tearDown();
 
  private:
-   std::vector<int32_t> m_activeList;
-
+   std::map<int32_t, int32_t> m_activeList;
+   std::mutex m_listMutex;
+   
 };
 #endif

@@ -1,7 +1,17 @@
 version: '2'
 
 services:
-    beaglebone:
-        image: ${IMAGE}
+    heart:
+        image: heart:v0.0
         network_mode: "host"
-        command: "beaglebone --port=${PORT} --cid=${CID} --id=1 --verbose=1"
+        command: "heart --cid=250 --cidBB=219 --id=1 --verbose=1"
+
+    vehicle-view:
+        image: chrberger/opendlv-vehicle-view-amd64:20180720
+        restart: on-failure
+        network_mode: "host"
+        volumes:
+        - ~/recordings:/opt/vehicle-view/recordings
+        - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+        - "8081:8081"

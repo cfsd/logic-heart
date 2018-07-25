@@ -24,10 +24,11 @@
 
 
 
-Heart::Heart(int32_t mission)
+Heart::Heart()
   : m_activeList()
+  , m_listMutex()
 {
-  setUp(mission);
+  setUp();
 }
 
 Heart::~Heart()
@@ -39,13 +40,33 @@ Heart::~Heart()
 void Heart::nextContainer(cluon::data::Envelope &a_container)
 {
     if (a_container.dataType() == opendlv::system::SignalStatusMessage::ID()) {
+      std::lock_guard<std::mutex> listLock(m_listMutex);
+
       auto  heartBeat = cluon::extractMessage<opendlv::logic::action::AimPoint>(std::move(a_container));
+      int32_t senderStamp = a_container.senderStamp();
+      cluon::data::TimeStamp currentTime = cluon::time::now();
+      m_activeList[senderStamp] = cluon::time::toMicroseconds(currentTime);
     }
 }
 
-void Heart::body() {
-  // bool allOk = true;
-  // cluon::data::TimeStamp currentTime = cluon::time::now();
+bool Heart::body() {
+  bool allOk = true;
+  std::map<int32_t, int32_t>::iterator it = m_activeList.begin();
+  std::vector<int32_t> failedBeats;
+
+  std::lock_guard<std::mutex> listLock(m_listMutex);
+  cluon::data::TimeStamp currentTime = cluon::time::now();
+  while(it != m_activeList.end())
+  {
+      int32_t diff = cluon::time::toMicroseconds(currentTime) - (it->second);
+      if (diff > 10000){
+        failedBeats.push_back(it->first);
+        std::cout << "Module [" << failedBeats.back() << "] failed to beat." << std::endl;
+        allOk = false;
+      }
+      it++;
+  }
+  return allOk;
 }
 
 /*
@@ -65,20 +86,36 @@ void Heart::body() {
   technical-inspection - 316, inspection,
 */
 
-void Heart::setUp(int32_t mission)
+void Heart::setUp()
 {
   std::cout << "Setting up heart" << std::endl;
+
+}
+
+void Heart::tearDown()
+{
+}
+
+bool Heart::setMission(int32_t mission) {
   if (mission == 1) {
     // acceleration
-    m_activeList = {114, 116, 118, 120, 211, 222, 313, 314, 315};
-  }
+    m_activeList[114] = 0;
+    m_activeList[116] = 0;
+    m_activeList[118] = 0;
+    m_activeList[120] = 0;
+    m_activeList[211] = 0;
+    m_activeList[222] = 0;
+    m_activeList[313] = 0;
+    m_activeList[314] = 0;
+    m_activeList[315] = 0;
+    }
   if (mission == 2) {
     // braketest
     m_activeList = {};
   }
   if (mission == 3) {
     // inspection
-    m_activeList = {316};
+    m_activeList[316] = 0;
   }
   if (mission == 4) {
     // safety check
@@ -90,10 +127,18 @@ void Heart::setUp(int32_t mission)
   }
   if (mission == 6) {
     // track drive
-    m_activeList = {114, 116, 118, 120, 211, 313, 314, 315};
+    m_activeList[114] = 0;
+    m_activeList[116] = 0;
+    m_activeList[118] = 0;
+    m_activeList[120] = 0;
+    m_activeList[211] = 0;
+    m_activeList[313] = 0;
+    m_activeList[314] = 0;
+    m_activeList[315] = 0;
   }
-}
-
-void Heart::tearDown()
-{
+  if (mission > 0){
+    return true;
+  } else {
+    return false;
+  }
 }

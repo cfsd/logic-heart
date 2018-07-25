@@ -30,49 +30,71 @@
 #include <chrono>
 
 int32_t main(int32_t argc, char **argv) {
-    int32_t retCode{0};
-    
-    auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if ((0 == commandlineArguments.count("cid")) || (0 == commandlineArguments.count("verbose"))) {
-      std::cout << "You didn't specify all command inputs" << std::endl;
-    }
+  int32_t retCode{0};
+  int32_t mission = 0;
+  bool readyState = false;
+  bool missionSet = false;
+  bool heartBeats = true;
 
-      const uint32_t ID{(commandlineArguments["id"].size() != 0) ? static_cast<uint32_t>(std::stoi(commandlineArguments["id"])) : 1};
-      const bool VERBOSE{(commandlineArguments["verbose"].size() != 0) ? commandlineArguments.count("verbose") != 0 : 1};
-      const uint16_t cid{(commandlineArguments["cid"].size() != 0) ? static_cast<uint16_t>(std::stoi(commandlineArguments["cid"])) : (uint16_t) 48};
-      const uint16_t cidBB{(commandlineArguments["cidBB"].size() != 0) ? static_cast<uint16_t>(std::stoi(commandlineArguments["cidBB"])) : (uint16_t) 219};
+  auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
+  if ((0 == commandlineArguments.count("cid")) || (0 == commandlineArguments.count("verbose"))) {
+    std::cout << "You didn't specify all command inputs" << std::endl;
+  }
 
-      //const float FREQ{std::stof(commandlineArguments["freq"])};
-      std::cout << "Micro-Service ID:" << ID << std::endl;
+  const uint32_t ID{(commandlineArguments["id"].size() != 0) ? static_cast<uint32_t>(std::stoi(commandlineArguments["id"])) : 1};
+  // const bool VERBOSE{(commandlineArguments["verbose"].size() != 0) ? commandlineArguments.count("verbose") != 0 : 1};
+  const uint16_t cid{(commandlineArguments["cid"].size() != 0) ? static_cast<uint16_t>(std::stoi(commandlineArguments["cid"])) : (uint16_t) 48};
+  const uint16_t cidBB{(commandlineArguments["cidBB"].size() != 0) ? static_cast<uint16_t>(std::stoi(commandlineArguments["cidBB"])) : (uint16_t) 219};
+  //const float FREQ{std::stof(commandlineArguments["freq"])};
 
-      // Interface to a running OpenDaVINCI session.
+  std::cout << "Micro-Service ID:" << ID << std::endl;
 
-      cluon::OD4Session od4{cid};
-      cluon::OD4Session od4StateMachine{cidSM};
+  // Interface to a running OpenDaVINCI session.
 
-      Heart heart(VERBOSE, ID, od4StateMachine);
+  cluon::OD4Session od4{cid};
+  cluon::OD4Session od4StateMachine{cidBB};
 
-      using namespace std::literals::chrono_literals;
+  Heart heart;
 
-
-      auto catchContainer{[&heart](cluon::data::Envelope &&envelope)
-      {
-        heart.nextContainer(envelope);
-      }};
-
-      od4.dataTrigger(opendlv::system::SignalStatusMessage::ID(), catchContainer);
-
-      // Just sleep as this microservice is data driven.
-      while (od4.isRunning()) {
-        std::this_thread::sleep_for(0.05s);
-        opendlv::system::SignalStatusMessage heartBeat;
-        heartBeat.code(1);
-
-        std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-        cluon::data::TimeStamp sampleTime = cluon::time::convert(tp);
-
-        od4.send(heartBeat,sampleTime,313);
+  auto catchState{[&mission, &readyState, &missionSet, &heart](cluon::data::Envelope &&envelope) {
+    if (envelope.senderStamp() == 1406) {
+      auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
+      mission = message.state();
+      if (missionSet!=0){
+        missionSet = heart.setMission(mission);
       }
+    }
+    if (envelope.senderStamp() == 1401) {
+      auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
+      if (message.state()==2) {
+        readyState = true;
+      }
+      if (message.state() != 2) {
+        readyState = false;
+      }
+    }
+  }};
+
+  od4StateMachine.dataTrigger(opendlv::proxy::SwitchStateReading::ID(), catchState);
+
+  auto catchContainer{[&heart](cluon::data::Envelope &&envelope) {
+    heart.nextContainer(envelope);
+  }};
+
+  od4.dataTrigger(opendlv::system::SignalStatusMessage::ID(), catchContainer);
+
+  using namespace std::literals::chrono_literals;
+
+  // Just sleep as this microservice is data driven.
+  while (od4.isRunning()) {
+    std::this_thread::sleep_for(0.05s);
+    if (readyState && missionSet) {
+      heartBeats = heart.body();
+    }
+    if (heartBeats==0) {
+      std::cout << "Heart beat failed" << std::endl;
+    }
+  }
 
   return retCode;
 }
