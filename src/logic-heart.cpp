@@ -49,8 +49,7 @@ void Heart::nextContainer(cluon::data::Envelope &a_container)
     }
 }
 
-bool Heart::body() {
-  bool allOk = true;
+std::vector<int32_t> Heart::body() {
   std::map<int32_t, int32_t>::iterator it = m_activeList.begin();
   std::vector<int32_t> failedBeats;
 
@@ -59,14 +58,13 @@ bool Heart::body() {
   while(it != m_activeList.end())
   {
       int32_t diff = cluon::time::toMicroseconds(currentTime) - (it->second);
-      if (diff > 10000){
+      if (diff > 20000){
         failedBeats.push_back(it->first);
-        std::cout << "Module [" << failedBeats.back() << "] failed to beat." << std::endl;
-        allOk = false;
+        std::cout << "Module [" << failedBeats.back() << "] failed to beat. Time since last message: " << diff << std::endl;
       }
       it++;
   }
-  return allOk;
+  return failedBeats;
 }
 
 /*
@@ -97,7 +95,7 @@ void Heart::tearDown()
 }
 
 bool Heart::setMission(int32_t mission) {
-  if (mission == 1) {
+  if (mission == 7) {
     // acceleration
     m_activeList[114] = 0;
     m_activeList[116] = 0;

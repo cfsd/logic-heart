@@ -31,10 +31,9 @@
 
 int32_t main(int32_t argc, char **argv) {
   int32_t retCode{0};
-  int32_t mission = 0;
+  int32_t mission = 7;
   bool readyState = false;
-  bool missionSet = false;
-  bool heartBeats = true;
+  bool missionSet = true;
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
   if ((0 == commandlineArguments.count("cid")) || (0 == commandlineArguments.count("verbose"))) {
@@ -59,9 +58,10 @@ int32_t main(int32_t argc, char **argv) {
   auto catchState{[&mission, &readyState, &missionSet, &heart](cluon::data::Envelope &&envelope) {
     if (envelope.senderStamp() == 1406) {
       auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
-      mission = message.state();
-      if (missionSet!=0){
-        missionSet = heart.setMission(mission);
+      int32_t tmpMission = message.state();
+      if (mission!=tmpMission){
+        missionSet = heart.setMission(tmpMission);
+        mission = tmpMission;
       }
     }
     if (envelope.senderStamp() == 1401) {
@@ -87,12 +87,16 @@ int32_t main(int32_t argc, char **argv) {
 
   // Just sleep as this microservice is data driven.
   while (od4.isRunning()) {
+    std::vector<int32_t> failedBeats;
     std::this_thread::sleep_for(0.05s);
+
     if (readyState && missionSet) {
-      heartBeats = heart.body();
-    }
-    if (heartBeats==0) {
-      std::cout << "Heart beat failed" << std::endl;
+      failedBeats = heart.body();
+      if (failedBeats.empty()) {
+        std::cout << "Heart beat success" << std::endl;
+      } else {
+        std::cout << "Heart beats failed" << std::endl;
+      }
     }
   }
 

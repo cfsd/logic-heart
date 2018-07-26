@@ -28,7 +28,7 @@ class Heart {
   Heart();
   ~Heart();
   void nextContainer(cluon::data::Envelope &);
-  bool body();
+  std::vector<int32_t> body();
   bool setMission(int32_t);
 
  private:
@@ -38,6 +38,6 @@ class Heart {
  private:
    std::map<int32_t, int32_t> m_activeList;
    std::mutex m_listMutex;
-   
+
 };
 #endif
