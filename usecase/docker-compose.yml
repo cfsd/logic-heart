@@ -4,7 +4,7 @@ services:
     heart:
         image: heart:v0.0
         network_mode: "host"
-        command: "heart --cid=250 --cidBB=219 --id=1 --verbose=1"
+        command: "heart --cid=250 --cidBB=253 --id=1 --verbose=1"
 
     vehicle-view:
         image: chrberger/opendlv-vehicle-view-amd64:20180720
