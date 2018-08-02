@@ -58,7 +58,7 @@ std::vector<int32_t> Heart::body() {
   while(it != m_activeList.end())
   {
       int32_t diff = cluon::time::toMicroseconds(currentTime) - (it->second);
-      if (diff > 20000){
+      if (diff > 200000){
         failedBeats.push_back(it->first);
         std::cout << "Module [" << failedBeats.back() << "] failed to beat. Time since last message: " << diff << std::endl;
       }

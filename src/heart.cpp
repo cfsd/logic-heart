@@ -53,9 +53,13 @@ int32_t main(int32_t argc, char **argv) {
   cluon::OD4Session od4{cid};
   cluon::OD4Session od4StateMachine{cidBB};
 
+  std::cout << "Cid bb: " << cidBB << std::endl;
+  std::cout << "Cid: " << cid << std::endl;
+
   Heart heart;
 
   auto catchState{[&mission, &readyState, &missionSet, &heart](cluon::data::Envelope &&envelope) {
+    std::cout << "Switch State!" << std::endl;
     if (envelope.senderStamp() == 1406) {
       auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
       int32_t tmpMission = message.state();
@@ -65,7 +69,10 @@ int32_t main(int32_t argc, char **argv) {
       }
     }
     if (envelope.senderStamp() == 1401) {
+
       auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
+      std::cout << "Switch state: " << message.state() << std::endl;
+
       if (message.state()==2) {
         readyState = true;
       }
@@ -78,6 +85,7 @@ int32_t main(int32_t argc, char **argv) {
   od4StateMachine.dataTrigger(opendlv::proxy::SwitchStateReading::ID(), catchState);
 
   auto catchContainer{[&heart](cluon::data::Envelope &&envelope) {
+    std::cout << "Catch container" << std::endl;
     heart.nextContainer(envelope);
   }};
 
@@ -87,11 +95,10 @@ int32_t main(int32_t argc, char **argv) {
 
   // Just sleep as this microservice is data driven.
   while (od4.isRunning()) {
-    std::vector<int32_t> failedBeats;
     std::this_thread::sleep_for(0.05s);
 
     if (readyState && missionSet) {
-      failedBeats = heart.body();
+      std::vector<int32_t> failedBeats = heart.body();
       if (failedBeats.empty()) {
         std::cout << "Heart beat success" << std::endl;
       } else {
