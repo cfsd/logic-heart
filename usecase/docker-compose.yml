@@ -9,7 +9,7 @@ services:
     vehicle-view:
         image: chrberger/opendlv-vehicle-view-amd64:20180720
         # restart: on-failure
-        network_mode: "bridge"
+        network_mode: "host"
         volumes:
         - ~/recordings:/opt/vehicle-view/recordings
         - /var/run/docker.sock:/var/run/docker.sock
@@ -18,7 +18,7 @@ services:
 
     cfsd18-sim-visualization:
         image: chalmersfsd/cfsd18-sim-visualization:pre-release-778bfb6
-        network_mode: "bridge"
+        network_mode: "host"
         ports:
         - "8000:8000"
         command: "--cid=253"

@@ -31,9 +31,9 @@
 
 int32_t main(int32_t argc, char **argv) {
   int32_t retCode{0};
-  int32_t mission = 7;
+  int32_t mission;
   bool readyState = false;
-  bool missionSet = true;
+  bool missionSet = false;
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
   if ((0 == commandlineArguments.count("cid")) || (0 == commandlineArguments.count("verbose"))) {
@@ -59,7 +59,6 @@ int32_t main(int32_t argc, char **argv) {
   Heart heart;
 
   auto catchState{[&mission, &readyState, &missionSet, &heart](cluon::data::Envelope &&envelope) {
-    std::cout << "Switch State!" << std::endl;
     if (envelope.senderStamp() == 1406) {
       auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
       int32_t tmpMission = message.state();
@@ -71,8 +70,6 @@ int32_t main(int32_t argc, char **argv) {
     if (envelope.senderStamp() == 1401) {
 
       auto message = cluon::extractMessage<opendlv::proxy::SwitchStateReading>(std::move(envelope));
-      std::cout << "Switch state: " << message.state() << std::endl;
-
       if (message.state()==2) {
         readyState = true;
       }
@@ -85,7 +82,6 @@ int32_t main(int32_t argc, char **argv) {
   od4StateMachine.dataTrigger(opendlv::proxy::SwitchStateReading::ID(), catchState);
 
   auto catchContainer{[&heart](cluon::data::Envelope &&envelope) {
-    std::cout << "Catch container" << std::endl;
     heart.nextContainer(envelope);
   }};
 
